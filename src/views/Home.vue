@@ -1,18 +1,79 @@
 <template>
-  <div class="home">
-    <img alt="Vue logo" src="../assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js + TypeScript App"/>
+  <div
+    class="row bg-blue-grey-2"
+    style="min-height: 100%; width: 100%; padding: 24px"
+  >
+    <div id="parent" class="justify-center content-start">
+      <div class="col-8 self-start q-gutter-x-sm">
+        <q-card class="no-border-radius">
+          <q-card-section horizontal>
+            <q-card-section>
+              <q-card bordered style="width: 600px; overflow-wrap: break-word">
+                <q-card-section>
+                  <div class="text-h6">Access Token</div>
+                </q-card-section>
+
+                <q-separator inset></q-separator>
+
+                <q-card-section>
+                  <pre>{{ authToken.tokenParsed }}</pre>
+                </q-card-section>
+
+                <q-separator inset></q-separator>
+
+                <q-card-section>
+                  {{ authToken.token }}
+                </q-card-section>
+              </q-card>
+            </q-card-section>
+
+            <q-separator vertical></q-separator>
+
+            <q-card-section>
+              <q-card bordered>
+                <q-card-section>
+                  <div class="text-h6">Identity Token</div>
+                </q-card-section>
+
+                <q-separator inset></q-separator>
+
+                <q-card-section>
+                  <pre>{{ authToken.idTokenParsed }}</pre>
+                </q-card-section>
+              </q-card>
+            </q-card-section>
+
+            <q-separator vertical></q-separator>
+
+            <q-card-section>
+              <q-card bordered>
+                <q-card-section>
+                  <div class="text-h6">Refresh Token</div>
+                </q-card-section>
+
+                <q-separator inset></q-separator>
+
+                <q-card-section>
+                  <pre>{{ authToken.refreshTokenParsed }}</pre>
+                </q-card-section>
+              </q-card>
+            </q-card-section>
+          </q-card-section>
+        </q-card>
+      </div>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
-import { Options, Vue } from 'vue-class-component';
-import HelloWorld from '@/components/HelloWorld.vue'; // @ is an alias to /src
+import { defineComponent, inject } from 'vue';
 
-@Options({
-  components: {
-    HelloWorld,
+export default defineComponent({
+  setup() {
+    const authToken: any = inject('authToken');
+    return {
+      authToken,
+    };
   },
-})
-export default class Home extends Vue {}
+});
 </script>

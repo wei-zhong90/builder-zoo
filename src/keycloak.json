@@ -1,0 +1,8 @@
+{
+  "realm": "BuilderZoo",
+  "auth-server-url": "https://auth.cloudmega.online/auth/",
+  "ssl-required": "external",
+  "resource": "builderZoo",
+  "public-client": true,
+  "confidential-port": 0
+}
