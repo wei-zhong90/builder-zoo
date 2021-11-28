@@ -70,7 +70,7 @@ import { defineComponent, inject } from 'vue';
 
 export default defineComponent({
   setup() {
-    const authToken: any = inject('authToken');
+    const authToken: unknown = inject('authToken');
     return {
       authToken,
     };
