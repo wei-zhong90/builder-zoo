@@ -12,6 +12,7 @@ export default {
 
     return {
       layout: ref(false),
+      selected: ref(false),
       leftDrawerOpen,
       toggleLeftDrawer() {
         leftDrawerOpen.value = !leftDrawerOpen.value;

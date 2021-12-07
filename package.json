@@ -8,12 +8,19 @@
     "lint": "vue-cli-service lint"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.42.0",
+    "@aws-sdk/credential-providers": "^3.42.0",
+    "@okta/okta-vue": "^5.0.2",
     "@quasar/extras": "^1.0.0",
     "core-js": "^3.6.5",
+    "dotenv": "^10.0.0",
+    "fs": "^0.0.1-security",
     "keycloak-js": "^15.0.2",
+    "path": "^0.12.7",
     "quasar": "^2.0.0",
     "vue": "^3.0.0",
     "vue-class-component": "^8.0.0-0",
+    "vue-property-decorator": "^9.1.2",
     "vue-router": "^4.0.0-0",
     "vuex": "^4.0.0-0"
   },

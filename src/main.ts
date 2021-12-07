@@ -5,8 +5,9 @@ import keycloakConfig from './keycloak.json';
 import router from './router';
 import store from './store';
 import App from './App.vue';
-import '@quasar/extras/material-icons/material-icons.css';
-import 'quasar/src/css/index.sass';
+import './quasar-user-options';
+// import '@quasar/extras/material-icons/material-icons.css';
+// import 'quasar/src/css/index.sass';
 
 const initOptions: Keycloak.KeycloakConfig = {
   url: keycloakConfig['auth-server-url'],
