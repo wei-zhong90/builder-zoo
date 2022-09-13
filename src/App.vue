@@ -60,14 +60,14 @@ export default {
         <q-list padding class="menu-list">
           <q-item clickable v-ripple>
             <q-item-section avatar>
-              <q-icon name="fingerprint"></q-icon>
+              <q-icon name="cloud_upload"></q-icon>
             </q-item-section>
 
             <q-item-section>
               <router-link
-                to="/accesstest"
+                to="/s3toolbox"
                 style="text-decoration-line: none; color: inherit"
-                >access test</router-link
+                >s3 toolbox</router-link
               >
             </q-item-section>
           </q-item>

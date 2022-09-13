@@ -1,6 +1,6 @@
 import { RouteRecordRaw, createWebHistory, createRouter } from 'vue-router';
 import Home from '../views/Home.vue';
-import AccessTest from '../views/AccessTest.vue';
+import S3ToolBox from '../views/S3ToolBox.vue';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -9,9 +9,9 @@ const routes: Array<RouteRecordRaw> = [
     component: Home,
   },
   {
-    path: '/accesstest',
-    name: 'accesstest',
-    component: AccessTest,
+    path: '/s3toolbox',
+    name: 's3toolbox',
+    component: S3ToolBox,
   },
 ];
 

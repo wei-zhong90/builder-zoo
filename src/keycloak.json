@@ -1,6 +1,6 @@
 {
   "realm": "BuilderZoo",
-  "auth-server-url": "https://auth.cloudmega.online/auth/",
+  "auth-server-url": "https://auth.weitogo.org",
   "ssl-required": "external",
   "resource": "builderZoo",
   "public-client": true,

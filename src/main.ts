@@ -41,6 +41,7 @@ keycloak
             console.info(`Token refreshed ${refreshed}`);
           } else {
             console.info(
+              // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
               `Token not refreshed, valid for ${Math.round(keycloak!.tokenParsed!.exp! + keycloak!.timeSkew! - new Date().getTime() / 1000)} seconds`,
             );
           }

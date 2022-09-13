@@ -8,56 +8,28 @@
         <q-card class="no-border-radius">
           <q-card-section horizontal>
             <q-card-section>
-              <q-card bordered style="width: 600px; overflow-wrap: break-word">
-                <q-card-section>
-                  <div class="text-h6">Access Token</div>
-                </q-card-section>
 
-                <q-separator inset></q-separator>
+              <my-card-vue :cardcontent="authToken.tokenParsed" cardtitle="Access Token">
+              </my-card-vue>
 
-                <q-card-section>
-                  <pre>{{ authToken.tokenParsed }}</pre>
-                </q-card-section>
+              <q-separator inset></q-separator>
 
-                <q-separator inset></q-separator>
+              <q-card-section bordered style="width: 600px; overflow-wrap: break-word">
+                {{ authToken.token }}
+              </q-card-section>
 
-                <q-card-section>
-                  {{ authToken.token }}
-                </q-card-section>
-              </q-card>
             </q-card-section>
 
             <q-separator vertical></q-separator>
 
-            <q-card-section>
-              <q-card bordered>
-                <q-card-section>
-                  <div class="text-h6">Identity Token</div>
-                </q-card-section>
-
-                <q-separator inset></q-separator>
-
-                <q-card-section>
-                  <pre>{{ authToken.idTokenParsed }}</pre>
-                </q-card-section>
-              </q-card>
-            </q-card-section>
+            <my-card-vue :cardcontent="authToken.idTokenParsed" cardtitle="Identity Token">
+            </my-card-vue>
 
             <q-separator vertical></q-separator>
 
-            <q-card-section>
-              <q-card bordered>
-                <q-card-section>
-                  <div class="text-h6">Refresh Token</div>
-                </q-card-section>
+            <my-card-vue :cardcontent="authToken.refreshTokenParsed" cardtitle="Refresh Token">
+            </my-card-vue>
 
-                <q-separator inset></q-separator>
-
-                <q-card-section>
-                  <pre>{{ authToken.refreshTokenParsed }}</pre>
-                </q-card-section>
-              </q-card>
-            </q-card-section>
           </q-card-section>
         </q-card>
       </div>
@@ -67,10 +39,14 @@
 
 <script lang="ts">
 import { defineComponent, inject } from 'vue';
+import myCardVue from '@/components/myCard.vue';
 
 export default defineComponent({
+  components: {
+    myCardVue,
+  },
   setup() {
-    const authToken: unknown = inject('authToken');
+    const authToken: any = inject('authToken');
     return {
       authToken,
     };
