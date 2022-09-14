@@ -10,13 +10,13 @@ import {
 } from 'quasar';
 import { computed, ref, watch } from 'vue';
 import {
-  CreateMultipartUploadCommand,
-  UploadPartCommand,
-  CompleteMultipartUploadCommand,
   S3Client,
 }
   from '@aws-sdk/client-s3';
 import { fromCognitoIdentityPool } from '@aws-sdk/credential-providers';
+import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
+import { Upload } from '@aws-sdk/lib-storage';
+import { XhrHttpHandler } from '@aws-sdk/xhr-http-handler';
 
 // export a Vue component
 export default createUploaderComponent({
@@ -97,80 +97,111 @@ export default createUploaderComponent({
 
     // [ REQUIRED! ]
     // Start the uploading process
-    function upload() {
+    async function upload() {
       // Reset uploads
       uploadTaskList.value = [];
       uploadProgressList.value = [];
       const t = props.authToken;
       const region = 'cn-north-1';
-      const parts = 3;
       console.log(t);
+
+      const stsclient = new STSClient({
+        region,
+        credentials: fromCognitoIdentityPool({
+          identityPoolId: 'cn-north-1:b8286d16-248e-402d-a2d0-944b750d451d',
+          logins: {
+            'auth.weitogo.org/realms/BuilderZoo': t,
+          },
+          clientConfig: { region },
+        }),
+      });
+
+      const stsparams = {
+        RoleArn: 'arn:aws-cn:iam::592757762710:role/s3-policy-assume-role',
+        RoleSessionName: props.prefix,
+      };
+
+      const command = new AssumeRoleCommand(stsparams);
+
+      const response = await stsclient.send(command);
+
+      const client = new S3Client({
+        region,
+        credentials: {
+          accessKeyId: response.Credentials.AccessKeyId,
+          secretAccessKey: response.Credentials.SecretAccessKey,
+          sessionToken: response.Credentials.SessionToken,
+        },
+        requestHandler: new XhrHttpHandler({}),
+      });
 
       helpers.queuedFiles.value.forEach(async (fileToUpload) => {
         if (helpers.uploadedFiles.value.includes(fileToUpload)) return;
 
         const createParams = {
           Bucket: props.bucket,
-          Key: `AROAYUAY5VKLB5EAMWQYS:${props.prefix}/${fileToUpload.name}`,
+          Key: `AROAYUAY5VKLFYKHOD7RL:${props.prefix}/${fileToUpload.name}`,
+          Body: fileToUpload,
         };
 
-        const client = new S3Client({
-          region,
-          credentials: fromCognitoIdentityPool({
-            identityPoolId: 'cn-north-1:b8286d16-248e-402d-a2d0-944b750d451d',
-            logins: {
-              'auth.weitogo.org/realms/BuilderZoo': t,
-            },
-            clientConfig: { region },
-            RoleSessionName: props.prefix,
-          }),
+        const upload = new Upload({
+          client,
+          params: createParams,
         });
 
-        console.log(client);
-        const data = await client.send(
-          new CreateMultipartUploadCommand(createParams),
-        );
-        console.log('Upload started. Upload ID: ', data.UploadId);
-        let n;
-        for (n = 1; n <= parts; n++) {
-          const uploadParams = {
-            Bucket: createParams.Bucket,
-            Key: createParams.Key,
-            PartNumber: n,
-            UploadId: data.UploadId,
-          };
-
-          try {
-            const data = await client.send(new UploadPartCommand(uploadParams));
-            console.log('Part uploaded. ETag: ', data.ETag);
-
-            var completeParams = {
-              Bucket: createParams.Bucket,
-              Key: createParams.Key,
-              MultipartUpload: {
-                Parts: [
-                  {
-                    ETag: data.ETag,
-                    PartNumber: n,
-                  },
-                ],
-              },
-              UploadId: uploadParams.UploadId,
-            };
-          } catch (err) {
-            console.log('Error uploading part', err);
-          }
-        }
-
-        try {
-          // Complete the mutlipart upload.
-          const data = await client.send(
-            new CompleteMultipartUploadCommand(completeParams),
+        upload.on('httpUploadProgress', (progress) => {
+          console.log(
+            progress.loaded, // Bytes uploaded so far.
+            progress.total, // Total bytes. Divide these two for progress percentage.
           );
-          console.log('Upload completed. File location: ', data.Location);
-        } catch (err) {
-          console.log('Error ', err);
-        }
+        });
+        await upload.done();
+
+        // console.log(client);
+        // const data = await client.send(
+        //   new CreateMultipartUploadCommand(createParams),
+        // );
+        // console.log('Upload started. Upload ID: ', data.UploadId);
+        // let n;
+        // for (n = 1; n <= parts; n++) {
+        //   const uploadParams = {
+        //     Bucket: createParams.Bucket,
+        //     Key: createParams.Key,
+        //     PartNumber: n,
+        //     UploadId: data.UploadId,
+        //   };
+
+        //   try {
+        //     const data = await client.send(new UploadPartCommand(uploadParams));
+        //     console.log('Part uploaded. ETag: ', data.ETag);
+
+        //     var completeParams = {
+        //       Bucket: createParams.Bucket,
+        //       Key: createParams.Key,
+        //       MultipartUpload: {
+        //         Parts: [
+        //           {
+        //             ETag: data.ETag,
+        //             PartNumber: n,
+        //           },
+        //         ],
+        //       },
+        //       UploadId: uploadParams.UploadId,
+        //     };
+        //   } catch (err) {
+        //     console.log('Error uploading part', err);
+        //   }
+        // }
+
+        // try {
+        //   // Complete the mutlipart upload.
+        //   const data = await client.send(
+        //     new CompleteMultipartUploadCommand(completeParams),
+        //   );
+        //   console.log('Upload completed. File location: ', data.Location);
+        // } catch (err) {
+        //   console.log('Error ', err);
+        // }
       });
     }
 
