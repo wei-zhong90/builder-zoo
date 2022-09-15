@@ -30,10 +30,18 @@
                       :rows="rows"
                       :columns="columns"
                       :loading="loading"
-                      row-key="name"
+                      row-key="filename"
                       v-model:pagination="pagination"
+                      selection="multiple"
+                      v-model:selected="selected"
                       >
                       <template v-slot:top>
+                        <q-btn
+                          color="red"
+                          icon-right="delete_forever"
+                          no-caps
+                          @click="deleteSelected"
+                        />
                         <q-space></q-space>
                         <q-btn icon="refresh" @click="updatetable"></q-btn>
                       </template>
@@ -50,6 +58,15 @@
                             <q-btn
                               icon="share"
                               @click="openbox(props.value)"
+                            />
+                          </q-td>
+                        </template>
+                        <template #body-cell-delete="props">
+                          <q-td :props="props">
+                            <q-btn
+                              icon="delete"
+                              color="negative"
+                              @click="deletebox(props.value, rows.indexOf(props.row))"
                             />
                           </q-td>
                         </template>
@@ -139,6 +156,7 @@ import {
   S3Client,
   ListObjectsV2Command,
   GetObjectCommand,
+  DeleteObjectCommand,
 }
   from '@aws-sdk/client-s3';
 import { fromCognitoIdentityPool } from '@aws-sdk/credential-providers';
@@ -155,6 +173,7 @@ export default defineComponent({
   },
   setup() {
     const $q = useQuasar();
+    const selected = ref([]);
     const region = 'cn-north-1';
     const authToken = inject('authToken');
     const text = ref('');
@@ -181,6 +200,9 @@ export default defineComponent({
       },
       {
         name: 'presignurl', align: 'center', label: 'Presigned URL', field: 'presignurl',
+      },
+      {
+        name: 'delete', align: 'center', label: 'Delete', field: 'delete',
       },
     ];
 
@@ -276,6 +298,40 @@ export default defineComponent({
       urlparam.value.key = info.key;
     }
 
+    function deletebox(info, index) {
+      loading.value = true;
+      stsclient.send(command).then(
+        (response) => {
+          const client = new S3Client({
+            region,
+            credentials: {
+              accessKeyId: response.Credentials.AccessKeyId,
+              secretAccessKey: response.Credentials.SecretAccessKey,
+              sessionToken: response.Credentials.SessionToken,
+            },
+          });
+
+          const deleteparam = {
+            Bucket: info.bucket,
+            Key: info.key,
+          };
+          const deletecommand = new DeleteObjectCommand(deleteparam);
+
+          client.send(deletecommand).then(
+            (data) => {
+              console.log(data.$metadata);
+              rows.value.splice(index, 1);
+              loading.value = false;
+            },
+            (err) => {
+              console.log(err);
+              loading.value = false;
+            },
+          );
+        },
+      );
+    }
+
     function generateUrl() {
       icon.value = true;
       const expiretime = Number(text.value) ? Number(text.value) * 60 : 3600;
@@ -341,7 +397,12 @@ export default defineComponent({
                     key: element.Key,
                   };
                   rows.value = [...rows.value, {
-                    filename, filesize, lastmodified, download, presignurl: download,
+                    filename,
+                    filesize,
+                    lastmodified,
+                    download,
+                    presignurl: download,
+                    delete: download,
                   }];
                 });
                 loading.value = false;
@@ -385,7 +446,12 @@ export default defineComponent({
                     key: element.Key,
                   };
                   rows.value = [...rows.value, {
-                    filename, filesize, lastmodified, download, presignurl: download,
+                    filename,
+                    filesize,
+                    lastmodified,
+                    download,
+                    presignurl: download,
+                    delete: download,
                   }];
                 });
                 loading.value = false;
@@ -410,12 +476,21 @@ export default defineComponent({
       generateUrl,
       openbox,
       copyToClipboard,
+      deletebox,
       icon,
       text,
       columns,
       rows,
       loading,
+      selected,
       presignedURL,
+      deleteSelected() {
+        selected.value.filter((item) => {
+          deletebox(item.delete, rows.value.indexOf(item));
+          return item;
+        });
+        selected.value = [];
+      },
       pagination: ref({
         sortBy: 'desc',
         descending: false,

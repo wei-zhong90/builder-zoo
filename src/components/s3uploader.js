@@ -101,7 +101,7 @@ export default createUploaderComponent({
     // [ REQUIRED! ]
     // Start the uploading process
     async function upload() {
-      console.log(helpers);
+      var startTime = performance.now();
       // Reset uploads
       uploadTaskList.value = [];
       uploadProgressList.value = [];
@@ -151,8 +151,8 @@ export default createUploaderComponent({
         const upload = new Upload({
           client,
           params: createParams,
-          queueSize: 4, // optional concurrency configuration
-          partSize: 1024 * 1024 * 5,
+          queueSize: 5, // optional concurrency configuration
+          partSize: 1024 * 1024 * 20,
         });
 
         uploadTaskList.value = [...uploadTaskList.value, upload];
@@ -175,6 +175,8 @@ export default createUploaderComponent({
           }
         });
         await upload.done();
+        const endTime = performance.now();
+        console.log(`FILE ${i} Upload took ${endTime - startTime} ms`);
 
         // console.log(client);
         // const data = await client.send(
