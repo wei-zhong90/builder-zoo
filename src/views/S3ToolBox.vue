@@ -33,6 +33,10 @@
                       row-key="name"
                       v-model:pagination="pagination"
                       >
+                      <template v-slot:top>
+                        <q-space></q-space>
+                        <q-btn icon="refresh" @click="updatetable"></q-btn>
+                      </template>
                         <template #body-cell-download="props">
                           <q-td :props="props">
                             <q-btn
@@ -301,8 +305,10 @@ export default defineComponent({
       );
     }
 
-    function updatetable(info) {
+    function updatetable(_) {
+      console.log(_);
       loading.value = true;
+      rows.value = [];
       stsclient.send(command).then(
         (response) => {
           const client = new S3Client({
@@ -314,10 +320,9 @@ export default defineComponent({
             },
           });
 
-          const prefix = info.value[0].Key.split('/').shift().concat('/');
           const listParams = {
-            Bucket: info.value[0].Bucket,
-            Prefix: prefix,
+            Bucket: 'document-share-wei',
+            Prefix: `AROAYUAY5VKLFYKHOD7RL:${authToken.value.idTokenParsed.preferred_username.replace(/\s/g, '')}/`,
           };
 
           const listcommand = new ListObjectsV2Command(listParams);
@@ -325,20 +330,25 @@ export default defineComponent({
           client.send(listcommand).then(
             (data) => {
               // console.log(data);
-              data.Contents.forEach((element) => {
+              if (data.Contents) {
+                data.Contents.forEach((element) => {
                 // console.log(element);
-                const filename = element.Key.split('/').pop();
-                const filesize = (element.Size / 1024 / 1024).toFixed(2);
-                const lastmodified = element.LastModified.toLocaleDateString();
-                const download = {
-                  bucket: listParams.Bucket,
-                  key: element.Key,
-                };
-                rows.value = [...rows.value, {
-                  filename, filesize, lastmodified, download, presignurl: download,
-                }];
-              });
-              loading.value = false;
+                  const filename = element.Key.split('/').pop();
+                  const filesize = (element.Size / 1024 / 1024).toFixed(2);
+                  const lastmodified = element.LastModified.toLocaleDateString();
+                  const download = {
+                    bucket: listParams.Bucket,
+                    key: element.Key,
+                  };
+                  rows.value = [...rows.value, {
+                    filename, filesize, lastmodified, download, presignurl: download,
+                  }];
+                });
+                loading.value = false;
+              } else {
+                console.log('empty bucket');
+                loading.value = false;
+              }
             },
           );
         },

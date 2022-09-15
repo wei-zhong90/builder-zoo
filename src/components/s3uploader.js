@@ -101,6 +101,7 @@ export default createUploaderComponent({
     // [ REQUIRED! ]
     // Start the uploading process
     async function upload() {
+      console.log(helpers);
       // Reset uploads
       uploadTaskList.value = [];
       uploadProgressList.value = [];
