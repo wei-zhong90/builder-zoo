@@ -1,6 +1,6 @@
 import Keycloak from 'keycloak-js';
 import { createApp } from 'vue';
-import { Quasar } from 'quasar';
+import { Quasar, Dialog } from 'quasar';
 import keycloakConfig from './keycloak.json';
 import router from './router';
 import store from './store';
@@ -29,7 +29,9 @@ keycloak
     } else {
       const myApp = createApp(App, { authToken: keycloak });
       myApp.use(store).use(router).use(Quasar, {
-        plugins: {}, // import Quasar plugins and add here
+        plugins: {
+          Dialog,
+        }, // import Quasar plugins and add here
       });
       myApp.mount('#app');
     }

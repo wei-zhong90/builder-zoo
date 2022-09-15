@@ -1,12 +1,14 @@
+<!-- eslint-disable @typescript-eslint/no-explicit-any -->
 <script lang="ts">
 import { ref, toRefs, provide } from 'vue';
 
 export default {
   props: ['authToken'],
+  // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
   setup(props: any): any {
     const leftDrawerOpen = ref(false);
     const { authToken } = toRefs(props);
-    console.log(JSON.stringify(authToken.value.tokenParsed, undefined, 2));
+    // console.log(JSON.stringify(authToken.value.tokenParsed, undefined, 2));
 
     provide('authToken', authToken);
 
@@ -37,10 +39,13 @@ export default {
             Builder Zoo
           </router-link>
         </q-toolbar-title>
+        <q-chip square icon="account_circle" color="primary" text-color="white">
+          Welcome! {{ authToken.idTokenParsed.preferred_username }}
+        </q-chip>
         <q-btn
           label="Logout"
           color="primary"
-          @click="authToken.logout()"
+          @click="authToken.logout({ redirectUri : 'https://s3toolbox.weitogo.org/' })"
         ></q-btn>
       </q-toolbar>
     </q-header>
@@ -80,3 +85,5 @@ export default {
     </q-page-container>
   </q-layout>
 </template>
+
+<!-- { redirectUri : 'https://s3toolbox.weitogo.org/' } -->

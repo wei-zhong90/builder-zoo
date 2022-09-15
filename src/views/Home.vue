@@ -14,8 +14,10 @@
 
               <q-separator inset></q-separator>
 
-              <q-card-section bordered style="width: 600px; overflow-wrap: break-word">
-                {{ authToken.token }}
+              <q-card-section bordered style="width: 600px">
+                <q-card style="overflow-wrap: break-word">
+                  {{ authToken.token }}
+                </q-card>
               </q-card-section>
 
             </q-card-section>
@@ -46,6 +48,7 @@ export default defineComponent({
     myCardVue,
   },
   setup() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const authToken: any = inject('authToken');
     return {
       authToken,

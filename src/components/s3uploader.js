@@ -1,3 +1,5 @@
+/* eslint-disable max-len */
+/* eslint-disable no-param-reassign */
 /* eslint-disable block-scoped-var */
 /* eslint-disable no-var */
 /* eslint-disable vars-on-top */
@@ -52,24 +54,25 @@ export default createUploaderComponent({
     // as this function will run in the component's setup()
     const uploadTaskList = ref([]);
     const uploadProgressList = ref([]);
+    const uploadProgressStatusList = ref([]);
     const uploadInProgress = ref(false);
 
     const uploadedFiles = ref([]);
 
     watch(
-      () => uploadProgressList,
+      () => uploadProgressStatusList,
       () => {
         uploadInProgress.value = false;
-        if (uploadProgressList.value.length) {
-          uploadInProgress.value = uploadProgressList.value.reduce(
+        if (uploadProgressStatusList.value.length) {
+          uploadInProgress.value = uploadProgressStatusList.value.reduce(
             (prev, curr) => prev || curr,
             false,
           );
+          console.log(uploadInProgress.value);
 
           // Uploads complete - emit uploaded event with file details
-          // eslint-disable-next-line max-len
-          if (uploadedFiles.value && (uploadedFiles.value.length >= uploadProgressList.value.length)) {
-            emit('uploaded', uploadedFiles);
+          if (uploadedFiles.value && (uploadedFiles.value.length >= uploadProgressStatusList.value.length)) {
+            if (!uploadInProgress.value) emit('uploaded', uploadedFiles);
           }
         }
       },
@@ -90,8 +93,8 @@ export default createUploaderComponent({
     // Abort and clean up any process
     // that is in progress
     function abort() {
-      uploadTaskList.value.forEach((uploadTask) => {
-        uploadTask.cancel();
+      uploadTaskList.value.forEach(async (uploadTask) => {
+        await uploadTask.abort();
       });
     }
 
@@ -101,9 +104,9 @@ export default createUploaderComponent({
       // Reset uploads
       uploadTaskList.value = [];
       uploadProgressList.value = [];
+      uploadProgressStatusList.value = [];
       const t = props.authToken;
       const region = 'cn-north-1';
-      console.log(t);
 
       const stsclient = new STSClient({
         region,
@@ -125,18 +128,18 @@ export default createUploaderComponent({
 
       const response = await stsclient.send(command);
 
-      const client = new S3Client({
-        region,
-        credentials: {
-          accessKeyId: response.Credentials.AccessKeyId,
-          secretAccessKey: response.Credentials.SecretAccessKey,
-          sessionToken: response.Credentials.SessionToken,
-        },
-        requestHandler: new XhrHttpHandler({}),
-      });
-
-      helpers.queuedFiles.value.forEach(async (fileToUpload) => {
+      helpers.queuedFiles.value.forEach(async (fileToUpload, i) => {
         if (helpers.uploadedFiles.value.includes(fileToUpload)) return;
+
+        const client = new S3Client({
+          region,
+          credentials: {
+            accessKeyId: response.Credentials.AccessKeyId,
+            secretAccessKey: response.Credentials.SecretAccessKey,
+            sessionToken: response.Credentials.SessionToken,
+          },
+          requestHandler: new XhrHttpHandler({}),
+        });
 
         const createParams = {
           Bucket: props.bucket,
@@ -147,13 +150,28 @@ export default createUploaderComponent({
         const upload = new Upload({
           client,
           params: createParams,
+          queueSize: 4, // optional concurrency configuration
+          partSize: 1024 * 1024 * 5,
         });
 
+        uploadTaskList.value = [...uploadTaskList.value, upload];
+
         upload.on('httpUploadProgress', (progress) => {
-          console.log(
-            progress.loaded, // Bytes uploaded so far.
-            progress.total, // Total bytes. Divide these two for progress percentage.
-          );
+          const { loaded } = progress;
+          const { total } = progress;
+
+          uploadProgressList.value[i] = loaded;
+
+          helpers.uploadedSize.value = uploadProgressList.value.reduce((partialSum, a) => partialSum + a, 0);
+
+          if (loaded === total) {
+            helpers.updateFileStatus(fileToUpload, 'uploaded');
+            uploadProgressStatusList.value[i] = false;
+            uploadedFiles.value = [...uploadedFiles.value, createParams];
+          } else {
+            helpers.updateFileStatus(fileToUpload, 'uploading', loaded);
+            uploadProgressStatusList.value[i] = true;
+          }
         });
         await upload.done();
 
