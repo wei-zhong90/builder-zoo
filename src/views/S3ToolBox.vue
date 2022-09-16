@@ -65,13 +65,13 @@
                         <!-- <q-td key="filename" auto-width>
                           {{ props.row.filename }}
                         </q-td> -->
-                        <template v-slot:no-data="{ icon, message, filter }">
+                        <template v-slot:no-data="{ message, }">
                           <div class="full-width row flex-center text-accent q-gutter-sm">
-                            <q-icon size="2em" name="sentiment_dissatisfied"></q-icon>
+                            <q-icon v-if="loading===true" size="2em" name="hourglass_top"></q-icon>
+                            <q-icon v-else size="2em" name="sentiment_dissatisfied"></q-icon>
                             <span>
                               {{ message }}
                             </span>
-                            <q-icon size="2em" :name="filter ? 'filter_b_and_w' : icon"></q-icon>
                           </div>
                         </template>
                         <template #body-cell-download="props">
