@@ -39,9 +39,15 @@ export default {
             Builder Zoo
           </router-link>
         </q-toolbar-title>
-        <q-chip square icon="account_circle" color="primary" text-color="white">
+        <!-- <q-chip square icon="account_circle" color="primary" text-color="white">
           Welcome! {{ authToken.idTokenParsed.preferred_username }}
-        </q-chip>
+        </q-chip> -->
+        <q-breadcrumbs active-color="white" style="font-size: 16px; padding-right: 1em;">
+          <q-breadcrumbs-el
+          :label="`Welcome! ${authToken.idTokenParsed.preferred_username}`"
+          icon="account_circle">
+          </q-breadcrumbs-el>
+        </q-breadcrumbs>
         <q-btn
           label="Logout"
           color="primary"
@@ -65,13 +71,16 @@ export default {
         <q-list padding class="menu-list">
           <q-item clickable v-ripple>
             <q-item-section avatar>
-              <q-icon name="cloud_upload"></q-icon>
+              <!-- <q-icon name="cloud_upload"></q-icon> -->
+              <q-avatar color="primary" text-color="white" icon="home_repair_service"></q-avatar>
             </q-item-section>
 
             <q-item-section>
               <router-link
                 to="/s3toolbox"
-                style="text-decoration-line: none; color: inherit"
+                style="text-decoration-line: none;
+                  color: inherit;
+                  font-size: large;"
                 >s3 toolbox</router-link
               >
             </q-item-section>

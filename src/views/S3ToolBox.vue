@@ -1,3 +1,4 @@
+<!-- eslint-disable max-len -->
 <!-- eslint-disable @typescript-eslint/no-var-requires -->
 <template>
   <div
@@ -62,9 +63,14 @@
                           color="primary"
                           @click="updatetable"></q-btn>
                         </template>
-                        <!-- <q-td key="filename" auto-width>
-                          {{ props.row.filename }}
-                        </q-td> -->
+                        <!-- <template v-slot:body-cell-filename="props">
+                          <q-td :props="props">
+                            <div>
+                              <q-badge color="purple" :label="props.value"></q-badge>
+                            </div>
+                              {{ props.row.filename }}
+                          </q-td>
+                        </template> -->
                         <template v-slot:no-data="{ message, }">
                           <div class="full-width row flex-center text-accent q-gutter-sm">
                             <q-icon v-if="loading===true" size="2em" name="hourglass_top"></q-icon>
@@ -125,6 +131,7 @@
                     bottom-slots
                     v-model="text"
                     label="Presigned URL lifespan"
+                    :rules="[ val => Number(val) <= 10080 || 'Please input number under 10080 (Minutes)']"
                   >
                     <template v-slot:prepend>
                       <q-icon name="event"></q-icon>
@@ -493,7 +500,7 @@ export default defineComponent({
             },
           });
           const listParams = {
-            Bucket: 'authToken.value.tokenParsed.bucketname',
+            Bucket: authToken.value.tokenParsed.bucketname,
             Prefix: `${authToken.value.tokenParsed.roleid}:${authToken.value.idTokenParsed.preferred_username.replace(/\s/g, '')}/`,
           };
           const listcommand = new ListObjectsV2Command(listParams);

@@ -14,6 +14,7 @@ const routes: Array<RouteRecordRaw> = [
     name: 's3toolbox',
     component: S3ToolBox,
   },
+  { path: '/:pathMatch(.*)*', name: 'NotFound', component: S3ToolBox },
 ];
 
 const router = createRouter({

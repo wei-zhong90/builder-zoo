@@ -28,7 +28,7 @@ export default createUploaderComponent({
 
   props: {
     authToken: {
-      type: String,
+      type: Object,
     },
     blocking: {
       type: Boolean,
@@ -130,6 +130,7 @@ export default createUploaderComponent({
       const response = await stsclient.send(command);
 
       helpers.queuedFiles.value.forEach(async (fileToUpload, i) => {
+        console.log(helpers.uploadedFiles.value);
         if (helpers.uploadedFiles.value.includes(fileToUpload)) return;
 
         const client = new S3Client({
