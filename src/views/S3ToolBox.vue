@@ -10,8 +10,8 @@
           <q-card-section horizontal>
             <q-card-section>
               <S3Uploader
-                :authToken="authToken.token"
-                bucket="document-share-wei"
+                :authToken="authToken"
+                :bucket="authToken.tokenParsed.bucketname"
                 :prefix="authToken.idTokenParsed.preferred_username.replace(/\s/g,'')"
                 label="S3 upload (Max 5 files)"
                 multiple
@@ -242,7 +242,7 @@ export default defineComponent({
     const stsclient = new STSClient({
       region,
       credentials: fromCognitoIdentityPool({
-        identityPoolId: 'cn-north-1:b8286d16-248e-402d-a2d0-944b750d451d',
+        identityPoolId: authToken.value.tokenParsed.poolid,
         logins: {
           'auth.weitogo.org/realms/BuilderZoo': authToken.value.token,
         },
@@ -251,7 +251,7 @@ export default defineComponent({
     });
 
     const stsparams = {
-      RoleArn: 'arn:aws-cn:iam::592757762710:role/s3-policy-assume-role',
+      RoleArn: authToken.value.tokenParsed.rolearn,
       RoleSessionName: authToken.value.idTokenParsed.preferred_username.replace(/\s/g, ''),
     };
 
@@ -413,62 +413,70 @@ export default defineComponent({
       );
     }
 
+    function sleep(ms) {
+      return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
     function updatetable(_) {
       console.log(_);
       loading.value = true;
       rows.value = [];
-      stsclient.send(command).then(
-        (response) => {
-          const client = new S3Client({
-            region,
-            credentials: {
-              accessKeyId: response.Credentials.AccessKeyId,
-              secretAccessKey: response.Credentials.SecretAccessKey,
-              sessionToken: response.Credentials.SessionToken,
+      sleep(1000).then(
+        () => {
+          stsclient.send(command).then(
+            (response) => {
+              const client = new S3Client({
+                region,
+                credentials: {
+                  accessKeyId: response.Credentials.AccessKeyId,
+                  secretAccessKey: response.Credentials.SecretAccessKey,
+                  sessionToken: response.Credentials.SessionToken,
+                },
+              });
+
+              const listParams = {
+                Bucket: authToken.value.tokenParsed.bucketname,
+                Prefix: `${authToken.value.tokenParsed.roleid}:${authToken.value.idTokenParsed.preferred_username.replace(/\s/g, '')}/`,
+              };
+
+              const listcommand = new ListObjectsV2Command(listParams);
+
+              client.send(listcommand).then(
+                (data) => {
+                  // console.log(data);
+                  if (data.Contents) {
+                    data.Contents.forEach((element) => {
+                      // console.log(element);
+                      const filename = element.Key.split('/').pop();
+                      const filesize = (element.Size / 1024 / 1024).toFixed(2);
+                      const lastmodified = element.LastModified.toLocaleDateString();
+                      const download = {
+                        bucket: listParams.Bucket,
+                        key: element.Key,
+                      };
+                      rows.value = [...rows.value, {
+                        filename,
+                        filesize,
+                        lastmodified,
+                        download,
+                        presignurl: download,
+                        delete: download,
+                      }];
+                    });
+                    loading.value = false;
+                  } else {
+                    console.log('empty bucket');
+                    loading.value = false;
+                  }
+                },
+              );
             },
-          });
-
-          const listParams = {
-            Bucket: 'document-share-wei',
-            Prefix: `AROAYUAY5VKLFYKHOD7RL:${authToken.value.idTokenParsed.preferred_username.replace(/\s/g, '')}/`,
-          };
-
-          const listcommand = new ListObjectsV2Command(listParams);
-
-          client.send(listcommand).then(
-            (data) => {
-              // console.log(data);
-              if (data.Contents) {
-                data.Contents.forEach((element) => {
-                // console.log(element);
-                  const filename = element.Key.split('/').pop();
-                  const filesize = (element.Size / 1024 / 1024).toFixed(2);
-                  const lastmodified = element.LastModified.toLocaleDateString();
-                  const download = {
-                    bucket: listParams.Bucket,
-                    key: element.Key,
-                  };
-                  rows.value = [...rows.value, {
-                    filename,
-                    filesize,
-                    lastmodified,
-                    download,
-                    presignurl: download,
-                    delete: download,
-                  }];
-                });
-                loading.value = false;
-              } else {
-                console.log('empty bucket');
-                loading.value = false;
-              }
+            (err) => {
+              console.log(err);
+              loading.value = false;
+              authToken.value.logout({ redirectUri: 'https://s3toolbox.weitogo.org/' });
             },
           );
-        },
-        (err) => {
-          console.log(err);
-          loading.value = false;
-          authToken.value.logout({ redirectUri: 'https://s3toolbox.weitogo.org/' });
         },
       );
     }
@@ -485,8 +493,8 @@ export default defineComponent({
             },
           });
           const listParams = {
-            Bucket: 'document-share-wei',
-            Prefix: `AROAYUAY5VKLFYKHOD7RL:${authToken.value.idTokenParsed.preferred_username.replace(/\s/g, '')}/`,
+            Bucket: 'authToken.value.tokenParsed.bucketname',
+            Prefix: `${authToken.value.tokenParsed.roleid}:${authToken.value.idTokenParsed.preferred_username.replace(/\s/g, '')}/`,
           };
           const listcommand = new ListObjectsV2Command(listParams);
           client.send(listcommand).then(

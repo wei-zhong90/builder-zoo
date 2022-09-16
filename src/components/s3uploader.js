@@ -106,13 +106,13 @@ export default createUploaderComponent({
       uploadTaskList.value = [];
       uploadProgressList.value = [];
       uploadProgressStatusList.value = [];
-      const t = props.authToken;
+      const t = props.authToken.token;
       const region = 'cn-north-1';
 
       const stsclient = new STSClient({
         region,
         credentials: fromCognitoIdentityPool({
-          identityPoolId: 'cn-north-1:b8286d16-248e-402d-a2d0-944b750d451d',
+          identityPoolId: props.authToken.tokenParsed.poolid,
           logins: {
             'auth.weitogo.org/realms/BuilderZoo': t,
           },
@@ -121,7 +121,7 @@ export default createUploaderComponent({
       });
 
       const stsparams = {
-        RoleArn: 'arn:aws-cn:iam::592757762710:role/s3-policy-assume-role',
+        RoleArn: props.authToken.tokenParsed.rolearn,
         RoleSessionName: props.prefix,
       };
 
@@ -144,7 +144,7 @@ export default createUploaderComponent({
 
         const createParams = {
           Bucket: props.bucket,
-          Key: `AROAYUAY5VKLFYKHOD7RL:${props.prefix}/${fileToUpload.name}`,
+          Key: `${props.authToken.tokenParsed.roleid}:${props.prefix}/${fileToUpload.name}`,
           Body: fileToUpload,
         };
 
