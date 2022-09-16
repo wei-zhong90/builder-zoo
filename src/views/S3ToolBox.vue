@@ -27,24 +27,53 @@
                   <div class="q-pa-md">
                       <q-table
                       title="Objects Table"
+                      no-data-label="Empty bucket"
+                      no-results-label="The filter didn't uncover any results"
                       :rows="rows"
                       :columns="columns"
                       :loading="loading"
+                      :filter="filter"
                       row-key="filename"
                       v-model:pagination="pagination"
                       selection="multiple"
                       v-model:selected="selected"
                       >
-                      <template v-slot:top>
-                        <q-btn
-                          color="red"
-                          icon-right="delete_forever"
-                          no-caps
-                          @click="deleteSelected"
-                        />
-                        <q-space></q-space>
-                        <q-btn icon="refresh" @click="updatetable"></q-btn>
-                      </template>
+                        <template v-slot:top>
+                          <q-btn
+                            color="negative"
+                            icon-right="delete_forever"
+                            no-caps
+                            @click="deleteSelected"
+                          />
+                          <q-space></q-space>
+                          <q-input
+                          dense
+                          debounce="300"
+                          v-model="filter"
+                          placeholder="Search"
+                          >
+                            <template v-slot:append>
+                              <q-icon name="search"></q-icon>
+                            </template>
+                          </q-input>
+                          <q-space></q-space>
+                          <q-btn
+                          icon="refresh"
+                          color="primary"
+                          @click="updatetable"></q-btn>
+                        </template>
+                        <!-- <q-td key="filename" auto-width>
+                          {{ props.row.filename }}
+                        </q-td> -->
+                        <template v-slot:no-data="{ icon, message, filter }">
+                          <div class="full-width row flex-center text-accent q-gutter-sm">
+                            <q-icon size="2em" name="sentiment_dissatisfied"></q-icon>
+                            <span>
+                              {{ message }}
+                            </span>
+                            <q-icon size="2em" :name="filter ? 'filter_b_and_w' : icon"></q-icon>
+                          </div>
+                        </template>
                         <template #body-cell-download="props">
                           <q-td :props="props">
                             <q-btn
@@ -74,6 +103,10 @@
                   </div>
               </div>
             </q-card-section>
+            <!-- <q-separator vertical></q-separator>
+            <q-card-section style="min-height: 100vh; width: 400px;">
+              <editorUploader/>
+            </q-card-section> -->
           </q-card-section>
         </q-card>
         <q-dialog v-model="icon">
@@ -149,8 +182,6 @@ import {
   onMounted,
 } from 'vue';
 
-// import { fromCognitoIdentityPool } from '@aws-sdk/credential-providers';
-// import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
 // eslint-disable-next-line @typescript-eslint/no-var-requires
 import {
   S3Client,
@@ -164,12 +195,12 @@ import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
 import { exportFile, useQuasar, copyToClipboard } from 'quasar';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import S3Uploader from '@/components/s3uploader';
-
-// const region = 'ap-northeast-1';
+// import editorUploader from '@/components/editorUploader.vue';
 
 export default defineComponent({
   components: {
     S3Uploader,
+    // editorUploader,
   },
   setup() {
     const $q = useQuasar();
@@ -228,6 +259,7 @@ export default defineComponent({
 
     function downloadfile(info) {
       // console.log(info);
+      loading.value = true;
       stsclient.send(command).then(
         (response) => {
           const client = new S3Client({
@@ -277,6 +309,7 @@ export default defineComponent({
             .then(
               (blob) => {
                 const status = exportFile(filename, blob);
+                loading.value = false;
                 if (status !== true) {
                   $q.notify({
                     message: 'Browser denied file download...',
@@ -285,7 +318,16 @@ export default defineComponent({
                   });
                 }
               },
+              (err) => {
+                console.log(err);
+                loading.value = false;
+              },
             );
+        },
+        (err) => {
+          console.log(err);
+          loading.value = false;
+          authToken.value.logout({ redirectUri: 'https://s3toolbox.weitogo.org/' });
         },
       );
     }
@@ -300,6 +342,7 @@ export default defineComponent({
 
     function deletebox(info, index) {
       loading.value = true;
+      rows.value.splice(index, 1);
       stsclient.send(command).then(
         (response) => {
           const client = new S3Client({
@@ -320,7 +363,6 @@ export default defineComponent({
           client.send(deletecommand).then(
             (data) => {
               console.log(data.$metadata);
-              rows.value.splice(index, 1);
               loading.value = false;
             },
             (err) => {
@@ -328,6 +370,11 @@ export default defineComponent({
               loading.value = false;
             },
           );
+        },
+        (err) => {
+          console.log(err);
+          loading.value = false;
+          authToken.value.logout({ redirectUri: 'https://s3toolbox.weitogo.org/' });
         },
       );
     }
@@ -357,6 +404,11 @@ export default defineComponent({
               text.value = '';
             },
           );
+        },
+        (err) => {
+          console.log(err);
+          loading.value = false;
+          authToken.value.logout({ redirectUri: 'https://s3toolbox.weitogo.org/' });
         },
       );
     }
@@ -413,6 +465,11 @@ export default defineComponent({
             },
           );
         },
+        (err) => {
+          console.log(err);
+          loading.value = false;
+          authToken.value.logout({ redirectUri: 'https://s3toolbox.weitogo.org/' });
+        },
       );
     }
     onMounted(() => {
@@ -466,6 +523,11 @@ export default defineComponent({
             },
           );
         },
+        (err) => {
+          console.log(err);
+          loading.value = false;
+          authToken.value.logout({ redirectUri: 'https://s3toolbox.weitogo.org/' });
+        },
       );
     });
 
@@ -479,6 +541,7 @@ export default defineComponent({
       deletebox,
       icon,
       text,
+      filter: ref(''),
       columns,
       rows,
       loading,
@@ -487,6 +550,7 @@ export default defineComponent({
       deleteSelected() {
         selected.value.filter((item) => {
           deletebox(item.delete, rows.value.indexOf(item));
+          // console.log(rows.value);
           return item;
         });
         selected.value = [];
