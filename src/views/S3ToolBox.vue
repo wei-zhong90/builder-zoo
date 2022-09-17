@@ -141,7 +141,7 @@
                     </template>
 
                     <template v-slot:hint>
-                      In Minute
+                      In Minute (longest as 10080 min(7 days))
                     </template>
                   </q-input>
                 </q-card-section>
@@ -158,6 +158,9 @@
                       {{ presignedURL }}
                     </q-card-section>
                   </q-card>
+                  <q-inner-loading :showing="!presignedURL&&innerloading">
+                    <q-spinner-gears size="50px" color="primary"></q-spinner-gears>
+                  </q-inner-loading>
                 </q-card-section>
                 <q-separator inset></q-separator>
                 <q-card-section class="row">
@@ -200,7 +203,7 @@ import {
 import { fromCognitoIdentityPool } from '@aws-sdk/credential-providers';
 import { STSClient, AssumeRoleCommand } from '@aws-sdk/client-sts';
 import { exportFile, useQuasar, copyToClipboard } from 'quasar';
-import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import axios from 'axios';
 import S3Uploader from '@/components/s3uploader';
 // import editorUploader from '@/components/editorUploader.vue';
 
@@ -212,6 +215,7 @@ export default defineComponent({
   setup() {
     const $q = useQuasar();
     const selected = ref([]);
+    const innerloading = ref(false);
     const region = 'cn-north-1';
     const authToken = inject('authToken');
     const text = ref('');
@@ -387,35 +391,33 @@ export default defineComponent({
     }
 
     function generateUrl() {
-      icon.value = true;
-      const expiretime = Number(text.value) ? Number(text.value) * 60 : 3600;
-      stsclient.send(command).then(
-        (response) => {
-          const client = new S3Client({
-            region,
-            credentials: {
-              accessKeyId: response.Credentials.AccessKeyId,
-              secretAccessKey: response.Credentials.SecretAccessKey,
-              sessionToken: response.Credentials.SessionToken,
-            },
-          });
-
-          const getObjectParam = {
-            Bucket: urlparam.value.bucket,
-            Key: urlparam.value.key,
-          };
-          const getcommand = new GetObjectCommand(getObjectParam);
-          getSignedUrl(client, getcommand, { expiresIn: expiretime }).then(
-            (url) => {
-              presignedURL.value = url;
-              text.value = '';
-            },
-          );
+      innerloading.value = true;
+      const getconfig = {
+        method: 'get',
+        url: 'https://j1npbxz4mi.execute-api.ap-northeast-1.amazonaws.com/geturl',
+        headers: {
+          // eslint-disable-next-line quote-props
+          'Authorization': `Bearer ${authToken.value.token}`,
+          'Content-Type': 'application/json',
+        },
+        params: {
+          Bucket: urlparam.value.bucket,
+          Key: urlparam.value.key,
+          Exp: Number(text.value) ? Number(text.value) * 60 : 3600,
+        },
+      };
+      axios(getconfig).then(
+        (data) => {
+          console.log(data);
+          innerloading.value = false;
+          presignedURL.value = data.data.url;
+          text.value = '';
         },
         (err) => {
           console.log(err);
-          loading.value = false;
-          authToken.value.logout({ redirectUri: 'https://s3toolbox.weitogo.org/' });
+          innerloading.value = false;
+          presignedURL.value = err;
+          text.value = '';
         },
       );
     }
@@ -562,6 +564,7 @@ export default defineComponent({
       loading,
       selected,
       presignedURL,
+      innerloading,
       deleteSelected() {
         selected.value.filter((item) => {
           deletebox(item.delete, rows.value.indexOf(item));
